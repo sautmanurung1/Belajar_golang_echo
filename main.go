@@ -76,26 +76,24 @@ func GetUsersController(c echo.Context) error {
 
 // get user by id
 func GetUserController(c echo.Context) error{
-	id , _ := strconv.Atoi(c.Param("id"))
+	// get user by id
+	ID , _ := strconv.Atoi(c.Param("id"))
 	for _, user := range users{
-		if user.ID == id{
+		if user.ID == ID{
 			return c.JSON(http.StatusOK, map[string]interface{}{
-				"messages" : "success get user",
-				"user" : user,
+				"message" : "Success Get User",
+				"User" : user,
 			})
-		} else if err := DB.Save(&user).Error; err != nil{
-			return echo.NewHTTPError(http.StatusBadRequest,err.Error())
 		}
 	}
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"messagess" : "User Not Found In Databases",
+	return c.JSON(http.StatusNotFound, map[string]interface{}{
+		"message" : "User Not Found In Databases",
 	})
 }
 
 func CreateUserController(c echo.Context) error{
 	user := User{}
 	c.Bind(&user)
-
 	if err := DB.Save(&user).Error; err != nil{
 		return echo.NewHTTPError(http.StatusBadRequest,err.Error())
 	}
@@ -107,49 +105,44 @@ func CreateUserController(c echo.Context) error{
 
 // delete user by id 
 func DeleteUserController(c echo.Context) error{
-	id, _ := strconv.Atoi(c.Param("id"))
-	for index, user := range users {
-		if user.ID == id {
+	// delete user by id
+	ID , _ := strconv.Atoi(c.Param("id"))
+	for index, user := range users{
+		if user.ID == ID{
 			users = append(users[:index], users[index+1:]...)
+			if err := DB.Delete(&user).Error; err != nil{
+				return echo.NewHTTPError(http.StatusBadRequest,err.Error())
+			}
 			return c.JSON(http.StatusOK, map[string]interface{}{
-				"messages" : "success delete user",
-				"users" : users,
+				"message" : "Success Delete User",
+				"User" : user,
 			})
-		} else if err := DB.Save(&user).Error; err != nil{
-			return echo.NewHTTPError(http.StatusBadRequest,err.Error())
 		}
 	}
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"messagess" : "User Not Found In Databases",
+	return c.JSON(http.StatusNotFound, map[string]interface{}{
+		"message" : "User Not Found In Databases",
 	})
 }
 
 // Update user by id
 func UpdateUserController(c echo.Context) error{
-	id , _:= strconv.Atoi(c.Param("id"))
-	name := c.FormValue("name")
-	email := c.FormValue("email")
-	password := c.FormValue("password")
-
-	var user User
-	user.Name = name
-	user.Email = email
-	user.Password = password
-	for index, user := range users {
-		if user.ID == id {
-			users[index].Name = name
-			users[index].Email = email
-			users[index].Password = password
+	// update user by id
+	ID , _ := strconv.Atoi(c.Param("id"))
+	for index, user := range users{
+		if user.ID == ID{
+			c.Bind(&user)
+			users[index] = user
+			if err := DB.Save(&user).Error; err != nil{
+				return echo.NewHTTPError(http.StatusBadRequest,err.Error())
+			}
 			return c.JSON(http.StatusOK, map[string]interface{}{
-				"messages" : "success update user",
-				"users" : users,
+				"message" : "Success Update User",
+				"User" : user,
 			})
-		} else if err := DB.Save(&user).Error; err != nil{
-			return echo.NewHTTPError(http.StatusBadRequest,err.Error())
 		}
 	}
 	return c.JSON(http.StatusNotFound, map[string]interface{}{
-		"messages" : "Nothing To Delete",
+		"message" : "User Not Found In Databases",
 	})
 }
 
@@ -161,7 +154,7 @@ func main(){
 	e.GET("/users/:id",GetUserController)
 	e.POST("/users",CreateUserController)
 	e.DELETE("/users/:id",DeleteUserController)
-	e.PUT("/users/:id",DeleteUserController)
+	e.PUT("/users/:id",UpdateUserController)
 
 	// start the server, and log if it fails
 	e.Logger.Fatal(e.Start(":1234"))
